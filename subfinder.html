@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SubFinder — Pure JS Subdomain Scanner</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-badge">
+        <span class="dot"></span>
+        Pure JS · DNS-over-HTTPS · No Backend
+      </div>
+      <h1>Sub<span class="accent">Finder</span></h1>
+      <p class="subtitle">Real-time subdomain enumeration directly from the browser — without server</p>
+    </header>
+
+    <div class="wrapper">
+      <div class="search-card">
+        <div class="input-row">
+          <div class="input-wrap">
+            <input type="text" id="domain-input" placeholder="example.com" autocomplete="off" spellcheck="false" />
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </span>
+          </div>
+          <button class="btn-scan" id="btn-scan">
+            <svg class="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <svg class="stop-icon" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+            <span id="btn-text">Scan</span>
+          </button>
+        </div>
+
+        <div class="options-row">
+          <div class="option-group">
+            <label>Concurrency:</label>
+            <select class="option-select" id="concurrency-select">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="option-group">
+            <label>DoH Provider:</label>
+            <select class="option-select" id="doh-provider">
+              <option value="google">Google</option>
+              <option value="cloudflare">Cloudflare</option>
+            </select>
+          </div>
+
+          <div class="option-group">
+            <label>Wordlist:</label>
+            <select class="option-select" id="wordlist-select">
+              <option value="assets/subdomain/subdomains.txt">subdomains.txt</option>
+              <option value="assets/subdomain/sublists.txt">sublist.txt</option>
+            </select>
+          </div>
+
+          <div class="option-group">
+            <label>Custom words:</label>
+            <input type="text" class="option-input" id="custom-words" placeholder="intranet, staging2, ..." />
+          </div>
+          <div class="option-group" style="margin-left: auto">
+            <label id="wordlist-info" style="color: var(--text3)">Loading wordlist…</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-box s-found">
+          <div class="stat-num" id="stat-found">0</div>
+          <div class="stat-lbl">Found</div>
+        </div>
+        <div class="stat-box s-scanned">
+          <div class="stat-num" id="stat-scanned">0</div>
+          <div class="stat-lbl">Scanned</div>
+        </div>
+        <div class="stat-box s-progress">
+          <div class="stat-num" id="stat-progress">0%</div>
+          <div class="stat-lbl">Progress</div>
+        </div>
+        <div class="stat-box s-time">
+          <div class="stat-num" id="stat-time">0s</div>
+          <div class="stat-lbl">Elapsed</div>
+        </div>
+      </div>
+
+      <div class="progress-track" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <div class="main-grid">
+        <div class="results-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="live-dot" id="live-dot"></span>
+              <span id="panel-title-text">Scan Results</span>
+            </div>
+            <div class="panel-actions">
+              <button class="btn-sm" id="btn-export" disabled title="Export CSV">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+              </button>
+              <button class="btn-sm" id="btn-export-txt" disabled title="Export TXT">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                Export TXT
+              </button>
+              <button class="btn-sm" id="btn-clear" disabled>
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                </svg>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="fast">Fast &lt;100ms</button>
+            <button class="filter-tab" data-filter="slow">Slow &gt;500ms</button>
+            <button class="filter-tab" data-filter="ipv6">IPv6</button>
+          </div>
+
+          <div class="results-list" id="results-list">
+            <div class="empty-state" id="empty-state">
+              <div class="empty-icon">◎</div>
+              <div>Enter the domain and press Scan</div>
+              <div style="color: var(--text4); font-size: 10px">example: google.com · github.com</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-right">
+          <div class="status-card">
+            <div class="status-header">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              Status
+            </div>
+            <div class="status-body">
+              <div class="status-row">
+                <span class="status-key">Mode</span>
+                <span class="status-val ok" id="scan-mode">DNS-over-HTTPS</span>
+              </div>
+              <div class="status-row">
+                <span class="status-key">Provider</span>
+                <span class="status-val run" id="doh-status">Google</span>
+              </div>
+              <div class="status-row">
+                <span class="status-key">Domain</span>
+                <span class="status-val" id="current-domain">—</span>
+              </div>
+              <div class="status-row">
+                <span class="status-key">Wordlist</span>
+                <span class="status-val" id="wordlist-count">—</span>
+              </div>
+              <div class="status-row">
+                <span class="status-key">File</span>
+                <span class="status-val" id="wordlist-file">—</span>
+              </div>
+              <div class="status-row">
+                <span class="status-key">Concurrency</span>
+                <span class="status-val" id="threads-info">—</span>
+              </div>
+              <div class="status-row">
+                <span class="status-key">Rate</span>
+                <span class="status-val" id="scan-rate">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="status-header">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              Discovery Timeline
+            </div>
+            <div class="chart-body">
+              <div class="mini-bars" id="mini-bars"></div>
+            </div>
+          </div>
+
+          <div class="log-card">
+            <div class="status-header">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
+              </svg>
+              Live Log
+            </div>
+            <div class="log-body" id="live-log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title" id="modal-domain"></span>
+          <button class="modal-close" id="modal-close">✕ Close</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toast-wrap"></div>
+
+    <script src="assets/js/script.js"></script>
+  </body>
+</html>
