@@ -38,6 +38,15 @@ Engineered for security researchers who need more than just a list, but a clear 
 
 ---
 
+## ✨ User Interface
+<div align="center">
+  <img width="48%" height="345" alt="Page" src="https://github.com/Hexamora/SubTrace/blob/7d50f7a014e37a4e22fea2dd4e8494cedec3def1/Page%20_UI.png" />
+  &nbsp;
+  <img width="48%" height="345" alt="Result" src="https://github.com/Hexamora/SubTrace/blob/7d50f7a014e37a4e22fea2dd4e8494cedec3def1/Result_UI.png" />
+</div>
+
+---
+
 ## 🚀 Live Demo
 
 > Try it directly — no install needed.
